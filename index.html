@@ -106,7 +106,7 @@ const TXT={
   nearby:"Nearby places",wallet2:"Wallet",total:"Total",clearAll:"Clear all amounts",confirm:"Are you sure?",showRoute:"🗺️ Show route on map",
   gmaps:"↗️ Open in Google Maps",clearRoute:"✖ Clear route",noGps:"Turn on GPS first to see distance and route.",walk:"🚶 walking",
   routeFail:"Couldn't get a walking route, showing a straight line.",you:"you",mine:"Added by you",hours:"Hours",phone:"Phone",
-  none:"Nothing here yet.",away:"away",approx:"Approximate location – use Move pin to fix it",move:"📍 Move pin",moveHint:"Drag the red pin to the right spot",savePos:"Save this position",cancel:"Cancel",call:"Call"},
+  none:"Nothing here yet.",away:"away",approx:"Approximate location – use Move pin to fix it",move:"📍 Move pin",moveHint:"Drag the red pin to the right spot",savePos:"Save this position",cancel:"Cancel",call:"Call",retry:"could not load shops. Tap here to retry."},
  el:{title:"📍 Καταστήματα Λακωνίας",all:"Όλα",gps:"📡 Η θέση μου",add:"➕ Νέο κατάστημα",list:"📋 Κοντά",wallet:"💶 Πορτοφόλι",search:"Αναζήτηση…",
   rate:"⭐ Βαθμολογία",money:"💶 Πόσα χρήματα σου έδωσαν",dir:"🧭 Οδηγίες διαδρομής",close:"Κλείσιμο",back:"← Πίσω",save:"Αποθήκευση",
   saveRating:"Αποθήκευση βαθμολογίας",saveAmt:"Αποθήκευση ποσού",other:"Άλλο ποσό (€)",prev:"Προηγούμενα",loading:"Αναζήτηση καταστημάτων…",
@@ -115,7 +115,7 @@ const TXT={
   nearby:"Κοντινά μέρη",wallet2:"Πορτοφόλι",total:"Σύνολο",clearAll:"Καθαρισμός ποσών",confirm:"Είσαι σίγουρος;",showRoute:"🗺️ Διαδρομή στον χάρτη",
   gmaps:"↗️ Άνοιγμα στα Google Maps",clearRoute:"✖ Καθαρισμός διαδρομής",noGps:"Άνοιξε πρώτα το GPS για απόσταση και διαδρομή.",walk:"🚶 με τα πόδια",
   routeFail:"Δεν βρέθηκε διαδρομή, εμφανίζεται ευθεία γραμμή.",you:"εσύ",mine:"Προστέθηκε από εσένα",hours:"Ωράριο",phone:"Τηλέφωνο",
-  none:"Δεν υπάρχει τίποτα ακόμα.",away:"μακριά",approx:"Κατά προσέγγιση θέση – χρησιμοποίησε «Μετακίνηση»",move:"📍 Μετακίνηση πινέζας",moveHint:"Σύρε την κόκκινη πινέζα στο σωστό σημείο",savePos:"Αποθήκευση θέσης",cancel:"Άκυρο",call:"Κλήση"}
+  none:"Δεν υπάρχει τίποτα ακόμα.",away:"μακριά",approx:"Κατά προσέγγιση θέση – χρησιμοποίησε «Μετακίνηση»",move:"📍 Μετακίνηση πινέζας",moveHint:"Σύρε την κόκκινη πινέζα στο σωστό σημείο",savePos:"Αποθήκευση θέσης",cancel:"Άκυρο",call:"Κλήση",retry:"δεν φορτώθηκαν καταστήματα. Πάτα εδώ για επανάληψη."}
 };
 
 /* =================== HELPERS =================== */
@@ -130,7 +130,7 @@ const fmtD=m=>m<1000?Math.round(m)+" m":(m/1000).toFixed(1)+" km";
 
 /* =================== STATE =================== */
 let ratings=LS.get("ratings",{}), money=LS.get("money",{}), userShops=LS.get("userShops",[]);
-let osmShops=[], centers={}, currentV="all", hiddenCats=new Set(LS.get("hiddenCats",[])), me=null, adding=false;
+let failed=[], osmShops=[], centers={}, currentV="all", hiddenCats=new Set(LS.get("hiddenCats",[])), me=null, adding=false;
 
 /* =================== MAP =================== */
 const map=L.map("map").setView([36.85,22.7],13);
@@ -203,14 +203,23 @@ async function loadVillage(key){
   const a=`(around:${RADIUS},${c[0]},${c[1]})`;
   const q=`[out:json][timeout:40];(nwr${a}["shop"];nwr${a}["craft"];nwr${a}["office"~"^(estate_agent|insurance|travel_agent|lawyer|accountant|company)$"];`+
     `nwr${a}["amenity"~"^(${FOOD_AM.concat(SERV_AM).join("|")}|marketplace)$"];nwr${a}["tourism"~"^(hotel|guest_house|apartment|hostel|motel|camp_site|museum)$"];);out center tags;`;
-  for(const ep of["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter"]){
-    try{const r=await fetch(ep,{method:"POST",body:"data="+encodeURIComponent(q)});if(!r.ok)continue;
-      const j=await r.json();
-      const items=j.elements.map(e=>({id:e.type[0]+e.id,lat:e.lat??(e.center&&e.center.lat),lon:e.lon??(e.center&&e.center.lon),tags:e.tags||{}})).filter(s=>s.lat&&s.lon);
-      LS.set(ck,{t:Date.now(),c,items});return items;
-    }catch(e){}
+  const eps=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter"];
+  for(let round=0;round<2;round++){
+    for(const ep of eps){
+      const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),35000);
+      try{
+        const r=await fetch(ep,{method:"POST",body:"data="+encodeURIComponent(q),signal:ctl.signal});
+        clearTimeout(to);
+        if(!r.ok){await new Promise(z=>setTimeout(z,1500));continue}
+        const j=await r.json();
+        const items=j.elements.map(e=>({id:e.type[0]+e.id,lat:e.lat??(e.center&&e.center.lat),lon:e.lon??(e.center&&e.center.lon),tags:e.tags||{}})).filter(s=>s.lat&&s.lon);
+        LS.set(ck,{t:Date.now(),c,items});return items;
+      }catch(e){clearTimeout(to)}
+    }
   }
-  return cached?cached.items:[];
+  failed.push(key);
+  const old=LS.get("osm2_"+key,null);           // last resort: data saved by the previous version
+  return cached?cached.items:(old&&key!=="skala"?old.items:[]);
 }
 
 /* =================== UI: header =================== */
@@ -246,7 +255,7 @@ function drawMarkers(){
   visible().forEach(s=>{
     const c=CATS[catOf(s.tags)];
     const m=L.marker([s.lat,s.lon],{title:nameOf(s),icon:L.divIcon({className:"",html:`<div class="pin" style="--c:${c.color}">${iconOf(s.tags)}</div>`,iconSize:[30,30],iconAnchor:[15,15]})});
-    m.on("click",()=>openShop(s));layer.addLayer(m);
+    m.on("click",()=>{try{openShop(s)}catch(err){setStatus("⚠️ "+err.message)}});layer.addLayer(m);
   });
 }
 function showVillage(k){
@@ -406,13 +415,22 @@ map.on("click",e=>{
 /* =================== Start =================== */
 async function init(){
   buildHeader();setStatus(t("loading"));
-  const res=await Promise.all(Object.keys(VILLAGES).map(loadVillage));
-  const seen=new Set();osmShops=[];
-  res.flat().forEach(s=>{if(!seen.has(s.id)){seen.add(s.id);osmShops.push(s)}});
-  buildDirShops();applyMoved();
+  const seen=new Set();osmShops=[];let n=0;
+  for(const key of Object.keys(VILLAGES)){
+    setStatus(t("loading")+" ("+(++n)+"/3)");
+    const items=await loadVillage(key);
+    items.forEach(x=>{if(!seen.has(x.id)){seen.add(x.id);osmShops.push(x)}});
+    buildDirShops();
+    if(n===1)showVillage("all");else{drawMarkers()}
+  }
   showVillage("all");
-  setStatus(all().length?undefined:t("noData"));
+  if(failed.length){
+    const st=$("#status");
+    st.textContent="⚠️ "+failed.map(k=>VILLAGES[k][lang]).join(", ")+" – "+t("retry");
+    st.style.cursor="pointer";st.style.color="#d1242f";st.onclick=()=>location.reload();
+  }else setStatus(all().length?undefined:t("noData"));
 }
+window.addEventListener("error",e=>{const st=$("#status");if(st)st.textContent="⚠️ "+e.message});
 init();
 </script>
 </body>
