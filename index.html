@@ -5,273 +5,368 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Laconia Shops Map</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css">
 <style>
-  :root{--bg:#fff;--fg:#1c2733;--muted:#66727f;--accent:#0a6cff;--card:#fff;--line:#e2e6ea}
+  :root{--bg:#f6f8fa;--fg:#1c2733;--muted:#66727f;--accent:#0a6cff;--card:#fff;--line:#e2e6ea}
   @media (prefers-color-scheme:dark){:root{--bg:#141a20;--fg:#eef2f6;--muted:#9aa7b4;--card:#1d252d;--line:#2c3742}}
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg)}
   #app{display:flex;flex-direction:column;height:100%}
   header{padding:8px 10px;padding-top:calc(8px + env(safe-area-inset-top,0px));background:var(--card);border-bottom:1px solid var(--line);z-index:1000}
-  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-  h1{font-size:16px;margin:0 8px 6px 0}
-  button{font:inherit;cursor:pointer}
-  .chip{border:1px solid var(--line);background:var(--card);color:var(--fg);padding:6px 12px;border-radius:999px;font-size:14px}
+  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+  .row:last-of-type{margin-bottom:0}
+  h1{font-size:16px;margin:0;flex:1}
+  button{font:inherit;cursor:pointer;color:var(--fg)}
+  .chip{border:1px solid var(--line);background:var(--card);padding:5px 11px;border-radius:999px;font-size:13px;white-space:nowrap}
   .chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-  #search{flex:1;min-width:140px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}
+  .chip.off{opacity:.45}
+  #search{flex:1;min-width:120px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:14px}
   #status{font-size:12px;color:var(--muted);margin-top:4px}
   #map{flex:1;min-height:0}
-  .pin{font-size:22px;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .pin{width:30px;height:30px;border-radius:50%;background:var(--c,#555);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 5px rgba(0,0,0,.45)}
   .me{width:18px;height:18px;border-radius:50%;background:#0a6cff;border:3px solid #fff;box-shadow:0 0 0 6px rgba(10,108,255,.25)}
-  #total{margin-left:auto;font-size:13px;color:var(--muted)}
-  /* the pop-up window */
+  #clearRoute{display:none}
+  /* pop-up window */
   #sheetWrap{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:2000}
   #sheetWrap.open{display:flex}
-  #sheet{background:var(--card);width:100%;max-width:460px;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 30px rgba(0,0,0,.3)}
+  #sheet{background:var(--card);width:100%;max-width:480px;max-height:88%;overflow:auto;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 30px rgba(0,0,0,.3)}
   @media (min-width:600px){#sheetWrap{align-items:center}#sheet{border-radius:18px}}
   #sheet h2{margin:0 0 2px;font-size:19px}
-  #sheet .sub{color:var(--muted);font-size:14px;margin-bottom:14px}
-  .big{display:block;width:100%;padding:13px;margin:8px 0;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:16px;text-align:left}
+  #sheet .sub{color:var(--muted);font-size:14px;margin-bottom:14px;line-height:1.5}
+  .big{display:block;width:100%;padding:13px;margin:8px 0;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:16px;text-align:left}
   .big.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .stars{display:flex;justify-content:center;gap:6px;font-size:38px;margin:10px 0}
+  .big.danger{color:#d1242f}
+  .big.c{text-align:center}
+  .stars{display:flex;justify-content:center;gap:6px;font-size:40px;margin:10px 0}
   .stars span{cursor:pointer;color:#c9d0d7}.stars span.on{color:#f5b301}
   .amts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
-  .amts button{padding:14px 0;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font-size:17px}
+  .amts button{padding:14px 0;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:17px}
   .amts button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .custom{display:flex;gap:8px}.custom input{flex:1;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}
+  input.f,select.f{width:100%;padding:11px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;margin:6px 0}
   .back{background:none;border:none;color:var(--accent);padding:0;margin-bottom:8px;font-size:14px}
-  .note{font-size:13px;color:var(--muted);text-align:center;margin-top:6px}
+  .note{font-size:13px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+  .li{display:flex;justify-content:space-between;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px}
+  .li small{color:var(--muted);white-space:nowrap}
+  .tot{font-size:26px;font-weight:700;text-align:center;margin:6px 0 12px}
+  .leaflet-container{font:inherit}
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="row"><h1>📍 Laconia Shops</h1>
-      <button class="chip on" data-v="all">All</button>
-      <button class="chip" data-v="skala">Skala</button>
-      <button class="chip" data-v="agios">Agios Georgios</button>
-      <button class="chip" data-v="vlach">Vlachioti</button>
-      <button class="chip" id="gpsBtn">📡 My location</button>
-      <span id="total"></span>
+    <div class="row"><h1 id="tTitle">📍 Laconia Shops</h1><button class="chip" id="langBtn">🇬🇷 Ελληνικά</button></div>
+    <div class="row" id="villages"></div>
+    <div class="row" id="cats"></div>
+    <div class="row">
+      <input id="search">
+      <button class="chip" id="gpsBtn"></button>
+      <button class="chip" id="addBtn"></button>
+      <button class="chip" id="listBtn"></button>
+      <button class="chip" id="walletBtn"></button>
+      <button class="chip" id="clearRoute"></button>
     </div>
-    <div class="row" style="margin-top:6px"><input id="search" placeholder="Search a shop…"></div>
-    <div id="status">Loading map…</div>
+    <div id="status"></div>
   </header>
   <div id="map"></div>
 </div>
-
 <div id="sheetWrap"><div id="sheet"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script>
-// ---------- Villages (fallback centers used if geocoding fails) ----------
+/* =================== SETTINGS =================== */
 const VILLAGES = {
-  skala:{name:"Skala Lakonias",q:"Skala, Laconia, Greece",fb:[36.8585,22.7005]},
-  agios:{name:"Agios Georgios Lakonias",q:"Agios Georgios, Laconia, Greece",fb:[36.8410,22.7180]},
-  vlach:{name:"Vlachioti Lakonias",q:"Vlachioti, Laconia, Greece",fb:[36.8340,22.6650]}
+  skala:{en:"Skala",el:"Σκάλα",q:"Skala, Laconia, Greece",fb:[36.8585,22.7005]},
+  agios:{en:"Agios Georgios",el:"Άγιος Γεώργιος",q:"Agios Georgios, Laconia, Greece",fb:[36.8410,22.7180]},
+  vlach:{en:"Vlachioti",el:"Βλαχιώτι",q:"Vlachioti, Laconia, Greece",fb:[36.8340,22.6650]}
 };
-const RADIUS = 1500; // metres around each village centre
-
-const $ = s => document.querySelector(s);
-const store = {
-  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+const RADIUS = 2500; // metres searched around each village centre (bigger = more shops)
+const CATS = {
+  food:{icon:"🍽️",color:"#e8590c",en:"Food & drink",el:"Φαγητό & ποτό"},
+  shop:{icon:"🛍️",color:"#1c7ed6",en:"Shops",el:"Καταστήματα"},
+  services:{icon:"🏦",color:"#2f9e44",en:"Services",el:"Υπηρεσίες"},
+  stay:{icon:"🏨",color:"#9c36b5",en:"Stay",el:"Διαμονή"},
+  other:{icon:"📌",color:"#495057",en:"Other",el:"Άλλο"}
 };
-let ratings = store.get("ratings",{});
-let money = store.get("money",{});   // {shopId:[{amt,t}]}
+const ICONS={bakery:"🥖",butcher:"🥩",supermarket:"🛒",convenience:"🏪",greengrocer:"🍎",cafe:"☕",bar:"🍸",pub:"🍺",nightclub:"🎶",
+  fast_food:"🍔",ice_cream:"🍦",restaurant:"🍽️",pharmacy:"💊",bank:"🏦",atm:"🏧",fuel:"⛽",post_office:"📮",doctors:"🩺",clinic:"🩺",
+  dentist:"🦷",veterinary:"🐾",hairdresser:"💇",clothes:"👕",shoes:"👟",florist:"💐",hardware:"🔧",car_repair:"🚗",car_wash:"🚗",
+  kiosk:"📰",hotel:"🏨",guest_house:"🏡",apartment:"🏡",hostel:"🛏️",camp_site:"⛺",museum:"🏛️",marketplace:"🧺",mobile_phone:"📱",
+  electronics:"🔌",jewelry:"💍",books:"📚",gift:"🎁",fishmonger:"🐟",deli:"🧀",alcohol:"🍷",beverages:"🥤",tobacco:"🚬"};
+const FOOD_AM=["restaurant","cafe","bar","pub","fast_food","ice_cream","nightclub"];
+const SERV_AM=["pharmacy","bank","atm","fuel","post_office","clinic","doctors","dentist","veterinary","car_wash","car_rental","bicycle_rental"];
 
-const map = L.map("map",{zoomControl:true}).setView([36.85,22.7],13);
-// OpenStreetMap's own tile server blocks pages opened from a file (no Referer), so use other providers
-// Primary: OpenStreetMap (needs the page to be served from a real web address, e.g. GitHub Pages)
-const osmTiles=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
-  maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
-const cartoTiles=L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{
-  subdomains:"abcd",maxZoom:19,attribution:"© OpenStreetMap contributors © CARTO"});
-const esriTiles=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{
-  maxZoom:19,attribution:"Tiles © Esri"});
-let tileErrors=0,stage=0;
-function nextProvider(){
-  stage++;tileErrors=0;
-  if(stage===1){map.removeLayer(osmTiles);cartoTiles.addTo(map)}
-  else if(stage===2){map.removeLayer(cartoTiles);esriTiles.addTo(map)}
+const TXT={
+ en:{title:"📍 Laconia Shops",all:"All",gps:"📡 My location",add:"➕ Add shop",list:"📋 Nearby",wallet:"💶 Wallet",search:"Search a shop…",
+  rate:"⭐ Rate this shop",money:"💶 How much money they gave you",dir:"🧭 Directions to go there",close:"Close",back:"← Back",save:"Save",
+  saveRating:"Save rating",saveAmt:"Save amount",other:"Other amount (€)",prev:"Previous",loading:"Finding shops in the three villages…",
+  found:"places found. Tap a pin.",noData:"No shop data loaded. Check your internet and reload.",gpsOn:"📡 GPS active",gpsWait:"Getting your location…",
+  gpsErr:"GPS error: ",tapMap:"Tap the map where the new shop is…",newShop:"New shop",name:"Shop name",cat:"Category",delete:"Delete this shop",
+  nearby:"Nearby places",wallet2:"Wallet",total:"Total",clearAll:"Clear all amounts",confirm:"Are you sure?",showRoute:"🗺️ Show route on map",
+  gmaps:"↗️ Open in Google Maps",clearRoute:"✖ Clear route",noGps:"Turn on GPS first to see distance and route.",walk:"🚶 walking",
+  routeFail:"Couldn't get a walking route, showing a straight line.",you:"you",mine:"Added by you",hours:"Hours",phone:"Phone",
+  none:"Nothing here yet.",away:"away"},
+ el:{title:"📍 Καταστήματα Λακωνίας",all:"Όλα",gps:"📡 Η θέση μου",add:"➕ Νέο κατάστημα",list:"📋 Κοντά",wallet:"💶 Πορτοφόλι",search:"Αναζήτηση…",
+  rate:"⭐ Βαθμολογία",money:"💶 Πόσα χρήματα σου έδωσαν",dir:"🧭 Οδηγίες διαδρομής",close:"Κλείσιμο",back:"← Πίσω",save:"Αποθήκευση",
+  saveRating:"Αποθήκευση βαθμολογίας",saveAmt:"Αποθήκευση ποσού",other:"Άλλο ποσό (€)",prev:"Προηγούμενα",loading:"Αναζήτηση καταστημάτων…",
+  found:"μέρη βρέθηκαν. Πάτα μια πινέζα.",noData:"Δεν φορτώθηκαν δεδομένα. Έλεγξε το internet και ξαναφόρτωσε.",gpsOn:"📡 GPS ενεργό",gpsWait:"Εντοπισμός θέσης…",
+  gpsErr:"Σφάλμα GPS: ",tapMap:"Πάτα στον χάρτη εκεί που είναι το κατάστημα…",newShop:"Νέο κατάστημα",name:"Όνομα καταστήματος",cat:"Κατηγορία",delete:"Διαγραφή καταστήματος",
+  nearby:"Κοντινά μέρη",wallet2:"Πορτοφόλι",total:"Σύνολο",clearAll:"Καθαρισμός ποσών",confirm:"Είσαι σίγουρος;",showRoute:"🗺️ Διαδρομή στον χάρτη",
+  gmaps:"↗️ Άνοιγμα στα Google Maps",clearRoute:"✖ Καθαρισμός διαδρομής",noGps:"Άνοιξε πρώτα το GPS για απόσταση και διαδρομή.",walk:"🚶 με τα πόδια",
+  routeFail:"Δεν βρέθηκε διαδρομή, εμφανίζεται ευθεία γραμμή.",you:"εσύ",mine:"Προστέθηκε από εσένα",hours:"Ωράριο",phone:"Τηλέφωνο",
+  none:"Δεν υπάρχει τίποτα ακόμα.",away:"μακριά"}
+};
+
+/* =================== HELPERS =================== */
+const $=s=>document.querySelector(s);
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let lang=LS.get("lang","en");
+const t=k=>(TXT[lang]&&TXT[lang][k])||TXT.en[k]||k;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function dist(a,b){const R=6371000,r=Math.PI/180,dLat=(b[0]-a[0])*r,dLon=(b[1]-a[1])*r;
+  const x=Math.sin(dLat/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+const fmtD=m=>m<1000?Math.round(m)+" m":(m/1000).toFixed(1)+" km";
+
+/* =================== STATE =================== */
+let ratings=LS.get("ratings",{}), money=LS.get("money",{}), userShops=LS.get("userShops",[]);
+let osmShops=[], centers={}, currentV="all", hiddenCats=new Set(LS.get("hiddenCats",[])), me=null, adding=false;
+
+/* =================== MAP =================== */
+const map=L.map("map").setView([36.85,22.7],13);
+const osmTiles=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
+const cartoTiles=L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:19,attribution:"© OpenStreetMap © CARTO"});
+const esriTiles=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Tiles © Esri"});
+let tileErr=0,stage=0;
+function nextTiles(){stage++;tileErr=0;if(stage===1){map.removeLayer(osmTiles);cartoTiles.addTo(map)}else if(stage===2){map.removeLayer(cartoTiles);esriTiles.addTo(map)}}
+osmTiles.on("tileerror",()=>{if(stage===0&&++tileErr>4)nextTiles()});
+cartoTiles.on("tileerror",()=>{if(stage===1&&++tileErr>4)nextTiles()});
+const layer=(L.markerClusterGroup?L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:38,disableClusteringAtZoom:18}):L.layerGroup()).addTo(map);
+let routeLayer=null;
+
+/* =================== DATA =================== */
+function catOf(tg){
+  if(tg._cat)return tg._cat;
+  if(tg.tourism)return "stay";
+  if(tg.amenity&&FOOD_AM.includes(tg.amenity))return "food";
+  if(tg.amenity&&SERV_AM.includes(tg.amenity))return "services";
+  if(tg.shop)return "shop";
+  if(tg.craft||tg.office)return "services";
+  if(tg.amenity)return "other";
+  return "other";
 }
-osmTiles.on("tileerror",()=>{if(stage===0&&++tileErrors>4)nextProvider()});
-cartoTiles.on("tileerror",()=>{if(stage===1&&++tileErrors>4)nextProvider()});
+function subOf(tg){return tg.shop||tg.amenity||tg.tourism||tg.craft||tg.office||""}
+function iconOf(tg){return ICONS[subOf(tg)]||CATS[catOf(tg)].icon}
+function nameOf(s){return s.tags.name||s.tags["name:en"]||s.tags.brand||s.tags.operator||((subOf(s.tags)||CATS[catOf(s.tags)].en).replace(/_/g," "))}
+function nearestVillage(lat,lon){let best="skala",bd=1e12;for(const k in VILLAGES){const c=centers[k]||VILLAGES[k].fb;const d=dist([lat,lon],c);if(d<bd){bd=d;best=k}}return best}
+const all=()=>osmShops.concat(userShops);
 
-let shops = [], markers = {}, layer = L.layerGroup().addTo(map), centers = {}, current = "all";
-
-const ICONS = {shop:"🛍️",supermarket:"🛒",convenience:"🏪",bakery:"🥖",butcher:"🥩",restaurant:"🍽️",cafe:"☕",bar:"🍸",pub:"🍺",fast_food:"🍔",pharmacy:"💊",bank:"🏦",atm:"🏧",fuel:"⛽",hotel:"🏨",guest_house:"🏡",apartment:"🏡",hairdresser:"💇",clothes:"👕",kiosk:"📰",ice_cream:"🍦",greengrocer:"🍎",hardware:"🔧",car_repair:"🚗",florist:"💐",craft:"🛠️"};
-function iconFor(t){return ICONS[t.shop]||ICONS[t.amenity]||ICONS[t.tourism]||ICONS.shop}
-function kindOf(t){return (t.shop||t.amenity||t.tourism||t.craft||"shop").replace(/_/g," ")}
-
-// ---------- Data loading ----------
 async function geocode(v){
-  try{
-    const u="https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=gr&viewbox=22.2,37.1,23.1,36.5&bounded=1&q="+encodeURIComponent(v.q);
-    const r=await fetch(u);const j=await r.json();
-    if(j[0])return [parseFloat(j[0].lat),parseFloat(j[0].lon)];
-  }catch(e){}
+  try{const r=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=gr&viewbox=22.2,37.1,23.1,36.5&bounded=1&q="+encodeURIComponent(v.q));
+    const j=await r.json();if(j[0])return[parseFloat(j[0].lat),parseFloat(j[0].lon)]}catch(e){}
   return v.fb;
 }
 async function loadVillage(key){
-  const cacheKey="osm_"+key;
-  const cached=store.get(cacheKey,null);
-  if(cached&&Date.now()-cached.t<7*864e5){centers[key]=cached.c;return cached.items}
+  const ck="osm2_"+key,cached=LS.get(ck,null);
+  if(cached&&Date.now()-cached.t<3*864e5){centers[key]=cached.c;return cached.items}
   const c=await geocode(VILLAGES[key]);centers[key]=c;
   const a=`(around:${RADIUS},${c[0]},${c[1]})`;
-  const q=`[out:json][timeout:30];(nwr${a}["shop"];nwr${a}["amenity"~"^(restaurant|cafe|bar|pub|fast_food|pharmacy|bank|atm|ice_cream|fuel|marketplace)$"];nwr${a}["tourism"~"^(hotel|guest_house|apartment|hostel)$"];nwr${a}["craft"];);out center tags;`;
-  const eps=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
-  for(const ep of eps){
-    try{
-      const r=await fetch(ep,{method:"POST",body:"data="+encodeURIComponent(q)});
-      if(!r.ok)continue;
+  const q=`[out:json][timeout:40];(nwr${a}["shop"];nwr${a}["craft"];nwr${a}["office"~"^(estate_agent|insurance|travel_agent|lawyer|accountant|company)$"];`+
+    `nwr${a}["amenity"~"^(${FOOD_AM.concat(SERV_AM).join("|")}|marketplace)$"];nwr${a}["tourism"~"^(hotel|guest_house|apartment|hostel|motel|camp_site|museum)$"];);out center tags;`;
+  for(const ep of["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://overpass.private.coffee/api/interpreter"]){
+    try{const r=await fetch(ep,{method:"POST",body:"data="+encodeURIComponent(q)});if(!r.ok)continue;
       const j=await r.json();
-      const items=j.elements.map(e=>({
-        id:e.type[0]+e.id,village:key,
-        lat:e.lat??e.center?.lat,lon:e.lon??e.center?.lon,tags:e.tags||{}
-      })).filter(s=>s.lat&&s.lon);
-      store.set(cacheKey,{t:Date.now(),c,items});
-      return items;
+      const items=j.elements.map(e=>({id:e.type[0]+e.id,lat:e.lat??(e.center&&e.center.lat),lon:e.lon??(e.center&&e.center.lon),tags:e.tags||{}})).filter(s=>s.lat&&s.lon);
+      LS.set(ck,{t:Date.now(),c,items});return items;
     }catch(e){}
   }
-  return cached?.items||[];
+  return cached?cached.items:[];
 }
 
-async function init(){
-  $("#status").textContent="Finding shops in the three villages…";
-  const res=await Promise.all(Object.keys(VILLAGES).map(loadVillage));
-  shops=res.flat();
-  drawMarkers();
-  showVillage("all");
-  $("#status").textContent=shops.length?`${shops.length} places found. Tap a pin.`:"No data loaded – check your internet connection and reload.";
-  updateTotal();
+/* =================== UI: header =================== */
+function buildHeader(){
+  $("#tTitle").textContent=t("title");
+  $("#langBtn").textContent=lang==="en"?"🇬🇷 Ελληνικά":"🇬🇧 English";
+  $("#search").placeholder=t("search");
+  $("#gpsBtn").textContent=t("gps");$("#addBtn").textContent=t("add");$("#listBtn").textContent=t("list");
+  $("#walletBtn").textContent=t("wallet")+(totalMoney()?` €${totalMoney().toFixed(0)}`:"");
+  $("#clearRoute").textContent=t("clearRoute");
+  $("#villages").innerHTML=`<button class="chip ${currentV==="all"?"on":""}" data-v="all">${t("all")}</button>`+
+    Object.keys(VILLAGES).map(k=>`<button class="chip ${currentV===k?"on":""}" data-v="${k}">${VILLAGES[k][lang]}</button>`).join("");
+  $("#cats").innerHTML=Object.keys(CATS).map(k=>`<button class="chip ${hiddenCats.has(k)?"off":"on"}" data-c="${k}" style="${hiddenCats.has(k)?"":"background:"+CATS[k].color+";border-color:"+CATS[k].color}">${CATS[k].icon} ${CATS[k][lang]}</button>`).join("");
+  document.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>showVillage(b.dataset.v));
+  document.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{const c=b.dataset.c;hiddenCats.has(c)?hiddenCats.delete(c):hiddenCats.add(c);LS.set("hiddenCats",[...hiddenCats]);buildHeader();drawMarkers()});
 }
+$("#langBtn").onclick=()=>{lang=lang==="en"?"el":"en";LS.set("lang",lang);buildHeader();drawMarkers();setStatus()};
+function setStatus(msg){$("#status").textContent=msg||(all().length?`${all().length} ${t("found")}`:"")}
 
-// ---------- Markers ----------
-function nameOf(s){return s.tags.name||s.tags["name:en"]||("Unnamed "+kindOf(s.tags))}
-function drawMarkers(filter=""){
-  layer.clearLayers();markers={};
-  const f=filter.trim().toLowerCase();
-  shops.forEach(s=>{
-    if(current!=="all"&&s.village!==current)return;
-    if(f&&!(nameOf(s)+" "+kindOf(s.tags)).toLowerCase().includes(f))return;
-    const ic=L.divIcon({className:"",html:`<div class="pin">${iconFor(s.tags)}</div>`,iconSize:[26,26],iconAnchor:[13,13]});
-    const m=L.marker([s.lat,s.lon],{icon:ic,title:nameOf(s)}).addTo(layer);
-    m.on("click",()=>openSheet(s));
-    markers[s.id]=m;
+/* =================== markers =================== */
+function visible(){
+  const f=$("#search").value.trim().toLowerCase();
+  return all().filter(s=>{
+    s.v=s.v||nearestVillage(s.lat,s.lon);
+    if(currentV!=="all"&&s.v!==currentV)return false;
+    if(hiddenCats.has(catOf(s.tags)))return false;
+    if(f&&!(nameOf(s)+" "+subOf(s.tags)).toLowerCase().includes(f))return false;
+    return true;
+  });
+}
+function drawMarkers(){
+  layer.clearLayers();
+  visible().forEach(s=>{
+    const c=CATS[catOf(s.tags)];
+    const m=L.marker([s.lat,s.lon],{title:nameOf(s),icon:L.divIcon({className:"",html:`<div class="pin" style="--c:${c.color}">${iconOf(s.tags)}</div>`,iconSize:[30,30],iconAnchor:[15,15]})});
+    m.on("click",()=>openShop(s));layer.addLayer(m);
   });
 }
 function showVillage(k){
-  current=k;
-  document.querySelectorAll(".chip[data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===k));
-  drawMarkers($("#search").value);
-  if(k==="all"){
-    const pts=Object.values(centers);
-    if(pts.length)map.fitBounds(L.latLngBounds(pts).pad(0.3));
-  }else if(centers[k])map.setView(centers[k],16);
+  currentV=k;buildHeader();drawMarkers();
+  if(k==="all"){const p=Object.values(centers);if(p.length)map.fitBounds(L.latLngBounds(p).pad(0.35))}
+  else if(centers[k])map.setView(centers[k],16);
 }
-document.querySelectorAll(".chip[data-v]").forEach(b=>b.onclick=()=>showVillage(b.dataset.v));
-$("#search").oninput=e=>drawMarkers(e.target.value);
+$("#search").oninput=drawMarkers;
 
-// ---------- GPS ----------
-let me=null,meMarker=null,watchId=null,routeLine=null;
+/* =================== GPS =================== */
+let meMarker=null,watchId=null;
 function startGPS(){
-  if(!navigator.geolocation){$("#status").textContent="GPS is not supported on this device.";return}
+  if(!navigator.geolocation){setStatus("GPS not supported");return}
   if(watchId!==null){if(me)map.setView(me,17);return}
-  $("#status").textContent="Getting your location…";
+  setStatus(t("gpsWait"));
   watchId=navigator.geolocation.watchPosition(p=>{
     me=[p.coords.latitude,p.coords.longitude];
-    if(!meMarker){
-      meMarker=L.marker(me,{icon:L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18],iconAnchor:[9,9]}),zIndexOffset:1000}).addTo(map);
-      map.setView(me,17);
-    }else meMarker.setLatLng(me);
-    $("#status").textContent="📡 GPS active";
-    $("#gpsBtn").classList.add("on");
-    if(routeLine&&routeLine._dest)routeLine.setLatLngs([me,routeLine._dest]);
-  },err=>{
-    watchId=null;
-    $("#status").textContent="GPS error: "+err.message+" (allow location access; use https or a localhost server if it stays blocked)";
-  },{enableHighAccuracy:true,maximumAge:3000,timeout:15000});
+    if(!meMarker){meMarker=L.marker(me,{icon:L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18],iconAnchor:[9,9]}),zIndexOffset:1000}).addTo(map);map.setView(me,17)}
+    else meMarker.setLatLng(me);
+    $("#gpsBtn").classList.add("on");setStatus(t("gpsOn"));
+  },err=>{watchId=null;setStatus(t("gpsErr")+err.message)},{enableHighAccuracy:true,maximumAge:3000,timeout:20000});
 }
 $("#gpsBtn").onclick=startGPS;
 
-// ---------- The pop-up window ----------
-const sheetWrap=$("#sheetWrap"),sheet=$("#sheet");
-function closeSheet(){sheetWrap.classList.remove("open")}
-sheetWrap.addEventListener("click",e=>{if(e.target===sheetWrap)closeSheet()});
-function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
-function avg(id){const r=ratings[id];return r?r.score:0}
-function totalFor(id){return (money[id]||[]).reduce((a,b)=>a+b.amt,0)}
-function updateTotal(){
-  const t=Object.values(money).flat().reduce((a,b)=>a+b.amt,0);
-  $("#total").textContent=t?`💶 Total: €${t.toFixed(2)}`:"";
+/* =================== Sheet (pop-up window) =================== */
+const wrap=$("#sheetWrap"),sheet=$("#sheet");
+function closeSheet(){wrap.classList.remove("open")}
+wrap.addEventListener("click",e=>{if(e.target===wrap)closeSheet()});
+function show(html){sheet.innerHTML=html;wrap.classList.add("open");sheet.scrollTop=0}
+const totalFor=id=>(money[id]||[]).reduce((a,b)=>a+b.amt,0);
+const totalMoney=()=>Object.values(money).flat().reduce((a,b)=>a+b.amt,0);
+
+function head(s){
+  const tg=s.tags,addr=[tg["addr:street"],tg["addr:housenumber"]].filter(Boolean).join(" ");
+  const d=me?` · ${fmtD(dist(me,[s.lat,s.lon]))} ${t("away")}`:"";
+  return `<h2>${iconOf(tg)} ${esc(nameOf(s))}</h2><div class="sub">${esc(CATS[catOf(tg)][lang])}${subOf(tg)?" · "+esc(subOf(tg).replace(/_/g," ")):""} · ${VILLAGES[s.v||nearestVillage(s.lat,s.lon)][lang]}${d}`+
+    `${addr?"<br>"+esc(addr):""}${tg.opening_hours?"<br>🕒 "+esc(tg.opening_hours):""}${tg.phone?"<br>📞 "+esc(tg.phone):""}${s.user?"<br>✏️ "+t("mine"):""}</div>`;
 }
 
-function openSheet(s,view="main"){
-  sheetWrap.classList.add("open");
-  const t=s.tags,id=s.id;
-  const addr=[t["addr:street"],t["addr:housenumber"]].filter(Boolean).join(" ");
-  const head=`<h2>${iconFor(t)} ${esc(nameOf(s))}</h2><div class="sub">${esc(kindOf(t))} · ${VILLAGES[s.village].name}${addr?" · "+esc(addr):""}${t.opening_hours?"<br>🕒 "+esc(t.opening_hours):""}${t.phone?"<br>📞 "+esc(t.phone):""}</div>`;
-
-  if(view==="main"){
-    const r=avg(id),tot=totalFor(id);
-    sheet.innerHTML=head+
-      `<button class="big" id="bRate">⭐ Rate this shop ${r?`<span style="float:right">${"★".repeat(r)}${"☆".repeat(5-r)}</span>`:""}</button>
-       <button class="big" id="bMoney">💶 How much money they gave you ${tot?`<span style="float:right">€${tot.toFixed(2)}</span>`:""}</button>
-       <button class="big primary" id="bDir">🧭 Directions to go there</button>
-       <button class="big" id="bClose" style="text-align:center">Close</button>`;
-    $("#bRate").onclick=()=>openSheet(s,"rate");
-    $("#bMoney").onclick=()=>openSheet(s,"money");
-    $("#bDir").onclick=()=>{directions(s);};
-    $("#bClose").onclick=closeSheet;
-  }
-  if(view==="rate"){
-    let score=avg(id);
-    sheet.innerHTML=`<button class="back" id="bk">← Back</button>${head}
-      <div class="stars" id="st">${[1,2,3,4,5].map(n=>`<span data-n="${n}" class="${n<=score?"on":""}">★</span>`).join("")}</div>
-      <button class="big primary" id="save" style="text-align:center">Save rating</button>`;
-    $("#bk").onclick=()=>openSheet(s);
-    $("#st").querySelectorAll("span").forEach(sp=>sp.onclick=()=>{
-      score=+sp.dataset.n;
-      $("#st").querySelectorAll("span").forEach(x=>x.classList.toggle("on",+x.dataset.n<=score));
-    });
-    $("#save").onclick=()=>{if(!score)return;ratings[id]={score,name:nameOf(s),t:Date.now()};store.set("ratings",ratings);openSheet(s)};
-  }
-  if(view==="money"){
-    let amt=0;
-    const hist=(money[id]||[]).slice(-3).reverse().map(h=>`€${h.amt.toFixed(2)} · ${new Date(h.t).toLocaleDateString()}`).join("<br>");
-    sheet.innerHTML=`<button class="back" id="bk">← Back</button>${head}
-      <div class="amts">${[1,2,5,10,20,50].map(a=>`<button data-a="${a}">€${a}</button>`).join("")}</div>
-      <div class="custom"><input id="cust" type="number" min="0" step="0.5" inputmode="decimal" placeholder="Other amount (€)"></div>
-      <button class="big primary" id="save" style="text-align:center">Save amount</button>
-      ${hist?`<div class="note">Previous:<br>${hist}</div>`:""}`;
-    $("#bk").onclick=()=>openSheet(s);
-    sheet.querySelectorAll(".amts button").forEach(b=>b.onclick=()=>{
-      amt=+b.dataset.a;$("#cust").value="";
-      sheet.querySelectorAll(".amts button").forEach(x=>x.classList.toggle("on",x===b));
-    });
-    $("#cust").oninput=e=>{amt=parseFloat(e.target.value)||0;sheet.querySelectorAll(".amts button").forEach(x=>x.classList.remove("on"))};
-    $("#save").onclick=()=>{
-      if(amt<=0)return;
-      (money[id]=money[id]||[]).push({amt,t:Date.now(),name:nameOf(s)});
-      store.set("money",money);updateTotal();openSheet(s);
-    };
-  }
+function openShop(s){
+  const r=(ratings[s.id]||{}).score||0,tot=totalFor(s.id);
+  show(head(s)+
+   `<button class="big" id="bRate">${t("rate")} ${r?`<span style="float:right;color:#f5b301">${"★".repeat(r)}${"☆".repeat(5-r)}</span>`:""}</button>`+
+   `<button class="big" id="bMoney">${t("money")} ${tot?`<span style="float:right">€${tot.toFixed(2)}</span>`:""}</button>`+
+   `<button class="big primary" id="bDir">${t("dir")}</button>`+
+   (s.user?`<button class="big danger" id="bDel">🗑️ ${t("delete")}</button>`:"")+
+   `<button class="big c" id="bClose">${t("close")}</button>`);
+  $("#bRate").onclick=()=>rateView(s);$("#bMoney").onclick=()=>moneyView(s);$("#bDir").onclick=()=>dirView(s);$("#bClose").onclick=closeSheet;
+  if(s.user)$("#bDel").onclick=()=>{if(confirm(t("confirm"))){userShops=userShops.filter(x=>x.id!==s.id);LS.set("userShops",userShops);closeSheet();drawMarkers();setStatus()}};
 }
-
-function directions(s){
-  closeSheet();
+function rateView(s){
+  let score=(ratings[s.id]||{}).score||0;
+  show(`<button class="back" id="bk">${t("back")}</button>`+head(s)+
+   `<div class="stars" id="st">${[1,2,3,4,5].map(n=>`<span data-n="${n}" class="${n<=score?"on":""}">★</span>`).join("")}</div>`+
+   `<button class="big primary c" id="save">${t("saveRating")}</button>`);
+  $("#bk").onclick=()=>openShop(s);
+  $("#st").querySelectorAll("span").forEach(sp=>sp.onclick=()=>{score=+sp.dataset.n;$("#st").querySelectorAll("span").forEach(x=>x.classList.toggle("on",+x.dataset.n<=score))});
+  $("#save").onclick=()=>{if(!score)return;ratings[s.id]={score,name:nameOf(s),t:Date.now()};LS.set("ratings",ratings);openShop(s)};
+}
+function moneyView(s){
+  let amt=0;
+  const hist=(money[s.id]||[]).slice(-4).reverse().map(h=>`€${h.amt.toFixed(2)} · ${new Date(h.t).toLocaleDateString()}`).join("<br>");
+  show(`<button class="back" id="bk">${t("back")}</button>`+head(s)+
+   `<div class="amts">${[1,2,5,10,20,50].map(a=>`<button data-a="${a}">€${a}</button>`).join("")}</div>`+
+   `<input class="f" id="cust" type="number" min="0" step="0.5" inputmode="decimal" placeholder="${t("other")}">`+
+   `<button class="big primary c" id="save">${t("saveAmt")}</button>${hist?`<div class="note">${t("prev")}:<br>${hist}</div>`:""}`);
+  $("#bk").onclick=()=>openShop(s);
+  sheet.querySelectorAll(".amts button").forEach(b=>b.onclick=()=>{amt=+b.dataset.a;$("#cust").value="";sheet.querySelectorAll(".amts button").forEach(x=>x.classList.toggle("on",x===b))});
+  $("#cust").oninput=e=>{amt=parseFloat(e.target.value)||0;sheet.querySelectorAll(".amts button").forEach(x=>x.classList.remove("on"))};
+  $("#save").onclick=()=>{if(amt<=0)return;(money[s.id]=money[s.id]||[]).push({amt,t:Date.now(),name:nameOf(s)});LS.set("money",money);buildHeader();openShop(s)};
+}
+function dirView(s){
+  const d=me?fmtD(dist(me,[s.lat,s.lon])):null;
+  show(`<button class="back" id="bk">${t("back")}</button>`+head(s)+
+   (d?`<div class="tot" style="font-size:22px">${t("walk")} · ${d}</div>`:`<div class="note">${t("noGps")}</div>`)+
+   `<button class="big primary" id="bRoute">${t("showRoute")}</button>`+
+   `<button class="big" id="bG">${t("gmaps")}</button>`);
+  $("#bk").onclick=()=>openShop(s);
+  $("#bRoute").onclick=()=>{closeSheet();drawRoute(s)};
+  $("#bG").onclick=()=>window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=walking`,"_blank");
   if(!me)startGPS();
-  // draw an in-app guide line
-  if(routeLine)map.removeLayer(routeLine);
-  const dest=[s.lat,s.lon];
-  routeLine=L.polyline(me?[me,dest]:[dest],{color:"#0a6cff",weight:4,dashArray:"8 8"}).addTo(map);
-  routeLine._dest=dest;
-  map.fitBounds(L.latLngBounds(me?[me,dest]:[dest,dest]).pad(0.3),{maxZoom:18});
-  // full turn-by-turn in Google Maps (starts from your current position)
-  const url=`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=walking`;
-  window.open(url,"_blank");
 }
+async function drawRoute(s){
+  if(!me){startGPS();setStatus(t("noGps"));map.setView([s.lat,s.lon],18);return}
+  clearRoute();
+  const dest=[s.lat,s.lon];
+  routeLayer=L.layerGroup().addTo(map);
+  let pts=null,info="";
+  try{
+    const r=await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${me[1]},${me[0]};${s.lon},${s.lat}?overview=full&geometries=geojson`);
+    const j=await r.json();
+    if(j.routes&&j.routes[0]){pts=j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);info=`${t("walk")} · ${fmtD(j.routes[0].distance)} · ${Math.max(1,Math.round(j.routes[0].duration/60))} min`}
+  }catch(e){}
+  if(!pts){pts=[me,dest];info=t("routeFail")}
+  L.polyline(pts,{color:"#0a6cff",weight:5,opacity:.85}).addTo(routeLayer);
+  map.fitBounds(L.latLngBounds(pts).pad(0.25),{maxZoom:18});
+  setStatus(`${nameOf(s)} — ${info}`);
+  $("#clearRoute").style.display="inline-block";
+}
+function clearRoute(){if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}$("#clearRoute").style.display="none";setStatus()}
+$("#clearRoute").onclick=clearRoute;
 
+/* =================== Nearby list =================== */
+$("#listBtn").onclick=()=>{
+  const ref=me||[map.getCenter().lat,map.getCenter().lng];
+  const items=visible().map(s=>({s,d:dist(ref,[s.lat,s.lon])})).sort((a,b)=>a.d-b.d).slice(0,60);
+  show(`<h2>${t("nearby")}</h2><div class="sub">${items.length}</div>`+
+    (items.length?items.map((x,i)=>`<div class="li" data-i="${i}"><span>${iconOf(x.s.tags)} ${esc(nameOf(x.s))}</span><small>${fmtD(x.d)}</small></div>`).join(""):`<div class="note">${t("none")}</div>`)+
+    `<button class="big c" id="bClose">${t("close")}</button>`);
+  $("#bClose").onclick=closeSheet;
+  sheet.querySelectorAll(".li").forEach(el=>el.onclick=()=>{const s=items[+el.dataset.i].s;map.setView([s.lat,s.lon],18);openShop(s)});
+};
+
+/* =================== Wallet =================== */
+$("#walletBtn").onclick=()=>{
+  const rows=Object.values(money).flat().sort((a,b)=>b.t-a.t);
+  const byDay={};rows.forEach(r=>{const d=new Date(r.t).toLocaleDateString();byDay[d]=(byDay[d]||0)+r.amt});
+  show(`<h2>${t("wallet2")}</h2><div class="tot">€${totalMoney().toFixed(2)}</div>`+
+    Object.entries(byDay).map(([d,v])=>`<div class="li"><span>${d}</span><small>€${v.toFixed(2)}</small></div>`).join("")+
+    (rows.length?`<div class="note">${t("prev")}</div>`+rows.slice(0,15).map(r=>`<div class="li"><span>${esc(r.name||"")}</span><small>€${r.amt.toFixed(2)}</small></div>`).join(""):`<div class="note">${t("none")}</div>`)+
+    (rows.length?`<button class="big danger c" id="bClear">${t("clearAll")}</button>`:"")+`<button class="big c" id="bClose">${t("close")}</button>`);
+  $("#bClose").onclick=closeSheet;
+  const c=$("#bClear");if(c)c.onclick=()=>{if(confirm(t("confirm"))){money={};LS.set("money",money);buildHeader();closeSheet()}};
+};
+
+/* =================== Add your own shop =================== */
+$("#addBtn").onclick=()=>{adding=true;setStatus(t("tapMap"));map.getContainer().style.cursor="crosshair"};
+map.on("click",e=>{
+  if(!adding)return;adding=false;map.getContainer().style.cursor="";setStatus();
+  const {lat,lng}=e.latlng;
+  show(`<h2>➕ ${t("newShop")}</h2><input class="f" id="nm" placeholder="${t("name")}">`+
+    `<select class="f" id="ct">${Object.keys(CATS).map(k=>`<option value="${k}">${CATS[k].icon} ${CATS[k][lang]}</option>`).join("")}</select>`+
+    `<button class="big primary c" id="save">${t("save")}</button><button class="big c" id="bClose">${t("close")}</button>`);
+  $("#bClose").onclick=closeSheet;
+  $("#save").onclick=()=>{
+    const name=$("#nm").value.trim();if(!name)return;
+    userShops.push({id:"u"+Date.now(),user:true,lat,lon:lng,tags:{name,_cat:$("#ct").value}});
+    LS.set("userShops",userShops);closeSheet();drawMarkers();setStatus();
+  };
+});
+
+/* =================== Start =================== */
+async function init(){
+  buildHeader();setStatus(t("loading"));
+  const res=await Promise.all(Object.keys(VILLAGES).map(loadVillage));
+  const seen=new Set();osmShops=[];
+  res.flat().forEach(s=>{if(!seen.has(s.id)){seen.add(s.id);osmShops.push(s)}});
+  showVillage("all");
+  setStatus(all().length?undefined:t("noData"));
+}
 init();
 </script>
 </body>
