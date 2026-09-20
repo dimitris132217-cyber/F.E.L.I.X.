@@ -78,8 +78,8 @@
 /* =================== SETTINGS =================== */
 const VILLAGES = {
   skala:{en:"Skala",el:"Σκάλα",q:"Skala, Laconia, Greece",fb:[36.8510,22.6658],fixed:true},
-  agios:{en:"Agios Georgios",el:"Άγιος Γεώργιος",q:"Agios Georgios, Laconia, Greece",fb:[36.8410,22.7180]},
-  vlach:{en:"Vlachioti",el:"Βλαχιώτι",q:"Vlachioti, Laconia, Greece",fb:[36.8340,22.6650]}
+  agios:{en:"Agios Georgios",el:"Άγιος Γεώργιος",q:"Agios Georgios, Laconia, Greece",fb:[36.85440,22.67812],fixed:true},
+  vlach:{en:"Vlachioti",el:"Βλαχιώτι",q:"Vlachioti, Laconia, Greece",fb:[36.8620,22.7072],fixed:true}
 };
 const RADIUS = 2500; // metres searched around each village centre (bigger = more shops)
 const CATS = {
@@ -93,7 +93,7 @@ const ICONS={bakery:"🥖",butcher:"🥩",supermarket:"🛒",convenience:"🏪",
   fast_food:"🍔",ice_cream:"🍦",restaurant:"🍽️",pharmacy:"💊",bank:"🏦",atm:"🏧",fuel:"⛽",post_office:"📮",doctors:"🩺",clinic:"🩺",
   dentist:"🦷",veterinary:"🐾",hairdresser:"💇",clothes:"👕",shoes:"👟",florist:"💐",hardware:"🔧",car_repair:"🚗",car_wash:"🚗",
   kiosk:"📰",hotel:"🏨",guest_house:"🏡",apartment:"🏡",hostel:"🛏️",camp_site:"⛺",museum:"🏛️",marketplace:"🧺",mobile_phone:"📱",
-  electronics:"🔌",jewelry:"💍",books:"📚",gift:"🎁",fishmonger:"🐟",deli:"🧀",alcohol:"🍷",beverages:"🥤",tobacco:"🚬"};
+  electronics:"🔌",jewelry:"💍",books:"📚",gift:"🎁",fishmonger:"🐟",deli:"🧀",alcohol:"🍷",beverages:"🥤",tobacco:"🚬",farm:"🌱"};
 const FOOD_AM=["restaurant","cafe","bar","pub","fast_food","ice_cream","nightclub"];
 const SERV_AM=["pharmacy","bank","atm","fuel","post_office","clinic","doctors","dentist","veterinary","car_wash","car_rental","bicycle_rental"];
 
@@ -159,9 +159,9 @@ function subOf(tg){return tg.shop||tg.amenity||tg.tourism||tg.craft||tg.office||
 function iconOf(tg){return ICONS[subOf(tg)]||CATS[catOf(tg)].icon}
 function nameOf(s){return s.tags.name||s.tags["name:en"]||s.tags.brand||s.tags.operator||((subOf(s.tags)||CATS[catOf(s.tags)].en).replace(/_/g," "))}
 function nearestVillage(lat,lon){let best="skala",bd=1e12;for(const k in VILLAGES){const c=centers[k]||VILLAGES[k].fb;const d=dist([lat,lon],c);if(d<bd){bd=d;best=k}}return best}
-/* ---- Skala businesses taken from the xo.gr directory (names + phones; most have no exact coordinates) ---- */
+/* ---- Skala / Agios Georgios / Vlachioti businesses taken from the xo.gr directory (names + phones; most have no exact coordinates) ---- */
 const DIRECTORY=[
- {village:"skala",name:"ΣΚΛΑΒΕΝΙΤΗΣ - ΣΚΑΛΑ",tags:{shop:"supermarket"},phone:"+30 273 502 3072",addr:"Εθνική Οδός Σπάρτης - Μονεμβασιάς, Πανηγυρίστρα",lat:36.85487,lon:22.67950,match:["σκλαβενιτ","sklavenit"]},
+ {village:"agios",name:"ΣΚΛΑΒΕΝΙΤΗΣ - ΣΚΑΛΑ",tags:{shop:"supermarket"},phone:"+30 273 502 3072",addr:"Εθνική Οδός Σπάρτης - Μονεμβασιάς, Πανηγυρίστρα",lat:36.85487,lon:22.67950,match:["σκλαβενιτ","sklavenit"]},
  {village:"skala",name:"ΠΑΝΑΓΙΩΤΟΠΟΥΛΟΙ ΑΦΟΙ Α.Ε.Β.Ε. - Σκάλα",tags:{shop:"supermarket"},phone:"+30 273 502 3375",addr:"Κεντρική Οδός",match:["παναγιωτοπουλ","panagiotopoul"]},
  {village:"skala",name:"LIDL - ΣΚΑΛΑ ΛΑΚΩΝΙΑΣ",tags:{shop:"supermarket"},phone:"+30 800 111 3333",addr:"1ο χλμ. Ε.Ο. Σκάλας - Βλαχιώτη",match:["lidl"]},
  {village:"skala",name:"ΚΑΡΑΓΙΑΝΝΗ ΑΦΟΙ ΑΕ",tags:{shop:"supermarket"},phone:"+30 273 502 4140",match:["καραγιαν","karagian"]},
@@ -170,18 +170,96 @@ const DIRECTORY=[
  {village:"skala",name:"ΠΑΝΑΓΑΚΟΥ Γ. ΜΑΡΙΑ (Φαρμακείο)",tags:{amenity:"pharmacy"},phone:"+30 273 502 3344",match:["παναγακ"]},
  {village:"skala",name:"ΜΑΣΤΡΟΓΙΑΝΝΑΚΟΣ ΠΑΝΑΓΙΩΤΗΣ Γ. (Φαρμακείο)",tags:{amenity:"pharmacy"},phone:"+30 273 502 2530",match:["μαστρογιανν"]},
  {village:"skala",name:"ΜΑΡΤΣΟΥΚΟΥ ΘΕΟΔΩΡΑ (Φαρμακείο)",tags:{amenity:"pharmacy"},phone:"+30 273 502 3370",match:["μαρτσουκ"]},
- {village:"skala",name:"ΠΑΠΑΔΗΜΗΤΡΙΟΥ ΣΟΥΣΑΝΑ - ΣΤΑΥΡΙΑΝΑΚΟΥ ΦΩΤΙΟΣ (Φαρμακείο)",tags:{amenity:"pharmacy"},phone:"+30 273 502 3159",match:["παπαδημητρ","σταυριανακ"]}
+ {village:"skala",name:"ΠΑΠΑΔΗΜΗΤΡΙΟΥ ΣΟΥΣΑΝΑ - ΣΤΑΥΡΙΑΝΑΚΟΥ ΦΩΤΙΟΣ (Φαρμακείο)",tags:{amenity:"pharmacy"},phone:"+30 273 502 3159",match:["παπαδημητρ","σταυριανακ"]},
+
+ {village:"vlach",name:"BOKOU KATERINA CH.",tags:{shop:"supermarket"},phone:"+30 273 504 1193",match:["μπουκου","bokou"]},
+ {village:"vlach",name:"ZACHOS",tags:{shop:"supermarket"},phone:"+30 273 504 1220 / +30 694 781 9577",match:["ζαχος","zachos","zahos"]},
+ {village:"vlach",name:"CHIOTI - ASTERI ELENI (Pharmacy)",tags:{amenity:"pharmacy"},phone:"+30 273 504 1492",match:["χιωτη","chioti"]},
+ {village:"vlach",name:"KOUTSOUMPOU K MARIA (Pharmacy)",tags:{amenity:"pharmacy"},phone:"+30 273 504 1679",match:["κουτσουμπ","koutsoump"]},
+ {village:"vlach",name:"ROUMPIS AGISILAOS (Pharmacy)",tags:{amenity:"pharmacy"},phone:"+30 273 504 1594",match:["ρουμπης","roumpis"],addr:"Monemvasia-Sparti National Road"},
+ {village:"vlach",name:"KLIRONOMIKO FARMAKEIO FIFLI CHRISTOU (Pharmacy)",tags:{amenity:"pharmacy"},phone:"+30 273 504 1682",match:["φιφλη","fifli"]},
+ {village:"vlach",name:"STON PEINAKA",tags:{amenity:"cafe"},phone:"+30 273 504 2548",match:["peinaka","πινακα"]},
+ {village:"vlach",name:"50-50",tags:{amenity:"cafe"},phone:"+30 273 540 0458",match:["50-50"]},
+ {village:"vlach",name:"ASTERIA",tags:{amenity:"cafe"},phone:"+30 273 504 1430",match:["asteria","αστερια"]},
+ {village:"vlach",name:"THIVAIOU G. AIKATERINI",tags:{amenity:"cafe"},phone:"+30 273 504 1479",match:["θηβαιου","thivaiou"]},
+ {village:"vlach",name:"MR_COFFEE",tags:{amenity:"cafe"},phone:"+30 273 540 1433",match:["mr_coffee","mr coffee","mr. coffee"]},
+ {village:"vlach",name:"FRONIMOS GEORGIOS",tags:{amenity:"cafe"},phone:"+30 273 504 2266",match:["φρονιμος","fronimos"]},
+ {village:"vlach",name:"CORNER",tags:{amenity:"cafe"},phone:"+30 273 504 1790",match:["corner"]},
+ {village:"vlach",name:"KOUTSOTHEODORIS KONSTANTINOS G",tags:{amenity:"cafe"},phone:"+30 273 504 1332",match:["κουτσοθεοδωρη","koutsotheodor"]},
+ {village:"vlach",name:"PICCADILLY",tags:{amenity:"cafe"},phone:"+30 273 504 1646",match:["piccadilly","πικαντιλι"]},
+ {village:"vlach",name:"ALOTHI",tags:{amenity:"bar"},phone:"+30 273 504 1423 / +30 699 891 2400",match:["alothi","αλοθη"]},
+ {village:"vlach",name:"DA SOPRA",tags:{amenity:"cafe"},phone:"+30 273 504 2527",match:["da sopra","ντα σοπρα"]},
+ {village:"vlach",name:"TOURLOUPIS KONST. - TIME OUT",tags:{amenity:"cafe"},phone:"+30 273 504 1752",match:["τουρλουπη","tourloupi","time out"]},
+ {village:"vlach",name:"GIDOFONIAS (Grill / Butcher)",tags:{amenity:"restaurant"},phone:"+30 273 504 1770 / +30 694 082 1525",match:["γιδοφωνιας","gidofonias"]},
+ {village:"vlach",name:"MYSTES",tags:{amenity:"restaurant"},phone:"+30 273 504 2008",match:["μυστης","μυστες","mystes"],addr:"Monemvasias - Krokeon National Road"},
+ {village:"vlach",name:"LAMPROS IOANNIS (Bakery)",tags:{shop:"bakery"},phone:"+30 273 504 1345",match:["λαμπρος","lampros"]},
+ {village:"vlach",name:"ARTOPOIEIO (Bakery)",tags:{shop:"bakery"},phone:"+30 273 504 1667",match:[]},
+ {village:"vlach",name:"MANIATAKOS (Bakery)",tags:{shop:"bakery"},phone:"+30 273 509 1004",match:["μανιατακος","maniatakos"]},
+ {village:"vlach",name:"PORFYRIS TRIANTAFYLLOS I (Bakery)",tags:{shop:"bakery"},phone:"+30 273 504 1523",match:["πορφυρης","porfyris"]},
+ {village:"vlach",name:"NTOLTSE VITA (Patisserie)",tags:{shop:"pastry"},phone:"+30 273 504 1450",match:["ντολτσε","dolce vita"]}
+ ,
+ {"village": "skala", "name": "ART CAFE", "tags": {"amenity": "cafe"}, "phone": "+30 273 502 3450", "match": ["art cafe"]},
+ {"village": "skala", "name": "ΚΑΛΑΙΤΖΗΣ ΓΕΩΡΓΙΟΣ", "tags": {"amenity": "cafe"}, "phone": "+30 273 502 3725", "match": ["καλαιτζης"]},
+ {"village": "skala", "name": "CORETO", "tags": {"amenity": "cafe"}, "phone": "+30 273 502 3052", "match": ["coreto"]},
+ {"village": "skala", "name": "ΓΩΝΙΑΚΟ - Σκάλα", "tags": {"amenity": "cafe"}, "phone": "+30 273 502 2322", "match": ["γωνιακο", "goniako"]},
+ {"village": "skala", "name": "ΚΥΡΙΑΚΑΚΟΣ ΔΗΜΗΤΡΗΣ", "tags": {"amenity": "cafe"}, "phone": "+30 273 502 2278", "match": ["κυριακακος"]},
+ {"village": "skala", "name": "NOMAD", "tags": {"amenity": "cafe"}, "phone": "+30 273 502 3718", "match": ["nomad"], "addr": "Πλατεία", "lat": 36.85065, "lon": 22.66396},
+ {"village": "skala", "name": "PRIME - Σκάλα", "tags": {"amenity": "cafe"}, "phone": "+30 273 502 2022", "match": ["prime"]},
+ {"village": "skala", "name": "EVOLUTION PLAY CAFE", "tags": {"amenity": "cafe"}, "phone": "+30 694 713 0103", "match": ["evolution play"], "addr": "Κουτούπη Θαλή", "lat": 36.84742, "lon": 22.66112},
+ {"village": "skala", "name": "MR DONUT - Σκάλα", "tags": {"amenity": "cafe"}, "phone": "+30 273 502 3900", "match": ["mr donut"], "addr": "Κουτούπη Θαλή & Γρυπιώτη Γεωργίου 1", "lat": 36.84746, "lon": 22.66118},
+ {"village": "skala", "name": "BAR AZ NIBHT CLUB", "tags": {"amenity": "bar"}, "phone": "+30 273 502 3363 / +30 694 780 7037", "match": ["az nibht"]},
+ {"village": "skala", "name": "EVOLUTION", "tags": {"amenity": "cafe"}, "phone": "+30 273 502 9309", "match": ["evolution"]},
+ {"village": "skala", "name": "KOUROU-MPELO", "tags": {"amenity": "restaurant"}, "phone": "+30 273 502 4100", "match": ["κουρου", "kourou"]},
+ {"village": "skala", "name": "Ο ΚΗΠΟΣ - Σκάλα", "tags": {"amenity": "restaurant"}, "phone": "+30 273 502 3181", "match": ["ο κηπος"], "addr": "Γρηγορίου Βριτσιώτη"},
+ {"village": "skala", "name": "ΣΟΥΣΟΥΡΟ", "tags": {"amenity": "restaurant"}, "phone": "+30 273 502 2112", "match": ["σουσουρο"], "addr": "5ης Μαΐου", "lat": 36.84946, "lon": 22.66251},
+ {"village": "skala", "name": "Η ΑΠΟΛΑΥΣΙΣ", "tags": {"amenity": "restaurant"}, "phone": "+30 273 502 2761", "match": ["απολαυσις"], "addr": "Παλαμά Κωστή", "lat": 36.85114, "lon": 22.66365},
+ {"village": "skala", "name": "ΦΛΟΓΑ (Εστιατόριο / Ψητοπωλείο)", "tags": {"amenity": "restaurant"}, "phone": "+30 273 502 3941", "match": ["φλογα"]},
+ {"village": "skala", "name": "CASA DEL PAZZO", "tags": {"amenity": "restaurant"}, "phone": "+30 273 502 9153", "match": ["casa del pazzo"]},
+ {"village": "skala", "name": "GRILL MAFIA", "tags": {"amenity": "fast_food"}, "phone": "+30 273 502 3301", "match": ["grill mafia"], "addr": "5ης Μαΐου", "lat": 36.8495, "lon": 22.66258},
+ {"village": "skala", "name": "ΚΟΚΚΑΛΗΣ ΓΕΩΡΓΙΟΣ (Ψητοπωλείο)", "tags": {"amenity": "fast_food"}, "phone": "+30 273 502 3488", "match": ["κοκκαλης"]},
+ {"village": "skala", "name": "ΑΤΤΙΛΑΚΟΣ ΑΧ-ΔΟΥΝΙΑΣ Γ ΟΕ (Fast food)", "tags": {"amenity": "fast_food"}, "phone": "+30 273 502 2550", "match": ["αττιλακος"]},
+ {"village": "skala", "name": "ΤΖΙΒΑΕΡΙ - Σκάλα (Fast food)", "tags": {"amenity": "fast_food"}, "phone": "+30 273 502 2305", "match": ["τζιβαερι"], "addr": "5ης Μαΐου", "lat": 36.84942, "lon": 22.66244},
+ {"village": "skala", "name": "PIZZA PALACE - Σκάλα", "tags": {"amenity": "fast_food"}, "phone": "+30 273 502 2850", "match": ["pizza palace"]},
+ {"village": "skala", "name": "ΒΛΑΧΑΚΗΣ Μ ΓΕΩΡΓΙΟΣ (Πιτσαρία)", "tags": {"amenity": "fast_food"}, "phone": "+30 273 502 3003", "match": ["βλαχακης"]},
+ {"village": "skala", "name": "ΠΟΠΑΣ ΠΑΡΑΣΚΕΥΑΣ (Αρτοποιείο)", "tags": {"shop": "bakery"}, "phone": "+30 273 502 3153", "match": ["ποπας"]},
+ {"village": "skala", "name": "ΚΥΛΑΚΟΣ ΜΙΧΑΗΛ Ν. (Αρτοποιείο)", "tags": {"shop": "bakery"}, "phone": "+30 273 502 2256", "match": ["κυλακος μιχαηλ"], "addr": "Στουρνάρα", "lat": 36.85305, "lon": 22.66965},
+ {"village": "skala", "name": "ΚΥΛΑΚΟΣ ΓΕΩΡΓΙΟΣ (Αρτοποιείο / Ζαχαροπλαστείο)", "tags": {"shop": "bakery"}, "phone": "+30 273 502 3430", "match": ["κυλακος γεωργιος"]},
+ {"village": "skala", "name": "ΡΕΝΙΕΡΗΣ ΚΩΝΣΤΑΝΤΙΝΟΣ (Ζαχαροπλαστείο)", "tags": {"shop": "pastry"}, "phone": "+30 273 502 3815", "match": ["ρενιερης"]},
+ {"village": "skala", "name": "ΜΩΣΑΪΚΟ (Ζαχαροπλαστείο)", "tags": {"shop": "pastry"}, "phone": "+30 273 509 3478", "match": ["μωσαικο"], "addr": "Κουτούπη Θαλή", "lat": 36.84738, "lon": 22.66106},
+ {"village": "skala", "name": "ΣΑΛΑΒΡΑΚΟΥ (Ζαχαροπλαστείο)", "tags": {"shop": "pastry"}, "phone": "+30 273 502 2020", "match": ["σαλαβρακου"]},
+ {"village": "skala", "name": "ΠΑΠΑΤΣΑΚΩΝΑΣ ΘΕΟΔΩΡΟΣ (Κρεοπωλείο)", "tags": {"shop": "butcher"}, "phone": "+30 273 502 3539 / +30 694 601 0706", "match": ["παπατσακωνας"]},
+ {"village": "skala", "name": "ΧΟΥΜΠΑΥΛΗΣ Π. ΓΙΩΡΓΟΣ (Κρεοπωλείο)", "tags": {"shop": "butcher"}, "phone": "+30 273 502 2243", "match": ["χουμπαυλης γιωργος", "χουμπαυλης π"], "addr": "5ης Μαΐου 66", "lat": 36.8513, "lon": 22.66733},
+ {"village": "skala", "name": "ΚΩΣΤΑ ΜΑΡΓΑΡΙΤΑ Κ (Οπωροκηπευτικά)", "tags": {"shop": "greengrocer"}, "phone": "+30 273 540 0885 / +30 694 570 4701", "match": ["μαργαριτα"]},
+ {"village": "skala", "name": "ΜΠΑΤΣΑΚΗ ΑΦΟΙ (Οπωροκηπευτικά)", "tags": {"shop": "greengrocer"}, "phone": "+30 273 502 2469", "match": ["μπατσακη"]},
+ {"village": "skala", "name": "LACONIC GARDENS - Σκάλα", "tags": {"shop": "greengrocer"}, "phone": "+30 273 502 9135", "match": ["laconic"], "addr": "Εθν. Οδός Σκάλας – Βλαχιώτη, Θέση Περιστέρι"},
+ {"village": "skala", "name": "ΘΗΒΑΙΟΣ ΠΑΝΑΓΙΩΤΗΣ (Παντοπωλείο)", "tags": {"shop": "convenience"}, "phone": "+30 273 502 2871", "match": ["θηβαιος"], "addr": "5ης Μαΐου 55", "lat": 36.84936, "lon": 22.6624},
+ {"village": "skala", "name": "ΤΑ ΑΝΤΩΝΟΠΟΥΛΑΚΙΑ (Παντοπωλείο)", "tags": {"shop": "convenience"}, "phone": "+30 273 502 2442 / +30 694 488 9985", "match": ["αντωνοπουλακια"], "addr": "Τρικούπη Χαρίλαου", "lat": 36.85431, "lon": 22.66105},
+ {"village": "skala", "name": "ΤΡΑΠΕΖΑ ΠΕΙΡΑΙΩΣ - Σκάλα", "tags": {"amenity": "bank"}, "phone": "+30 273 502 7020", "match": ["πειραιως"], "addr": "Γρυπιώτη Γεωργίου"},
+ {"village": "skala", "name": "EUROBANK - Σκάλα", "tags": {"amenity": "bank"}, "phone": "+30 273 502 4173", "match": ["eurobank"], "addr": "Γρυπιώτη Γεωργίου", "lat": 36.85128, "lon": 22.66688},
+ {"village": "skala", "name": "AVIN - ΑΝΔΡΙΑΝΟΥ ΔΕΣΠΟΙΝΑ", "tags": {"amenity": "fuel"}, "phone": "+30 273 502 2018", "match": ["avin"]},
+ {"village": "skala", "name": "ΕΚΟ ΜΕΝΕΓΑΣ", "tags": {"amenity": "fuel"}, "phone": "+30 273 502 2472", "match": ["μενεγα", "menegas"], "addr": "Σκάλα", "lat": 36.8501, "lon": 22.66768},
+ {"village": "skala", "name": "AEGEAN - ΧΟΥΜΠΑΥΛΗΣ ΑΘΑΝΑΣΙΟΣ", "tags": {"amenity": "fuel"}, "phone": "+30 273 502 3380", "match": ["aegean"]},
+ {"village": "skala", "name": "EATALY - Gastronomic Approach", "tags": {"amenity": "restaurant"}, "phone": "+30 273 502 2040", "match": ["eataly"], "addr": "5ης Μαΐου", "lat": 36.8502, "lon": 22.6644},
+
+ {"village": "agios", "name": "BOKOU K. ELENI (Pharmacy)", "tags": {"amenity": "pharmacy"}, "phone": "+30 273 502 9047", "match": ["μπουκου", "bokou"]},
+ {"village": "agios", "name": "BP - MANITARAS D. - STATHIS GEORG", "tags": {"amenity": "fuel"}, "phone": "+30 273 502 3080", "match": ["bp"], "addr": "Πανηγυρίστρα", "lat": 36.85443, "lon": 22.67868},
+ {"village": "agios", "name": "ΠΕΡΙ ΑΓΡΟΥ (Γεωργικά Είδη)", "tags": {"shop": "farm"}, "phone": "+30 273 502 2197", "match": ["περι αγρου", "peri agrou"]},
+
+ {"village": "vlach", "name": "POLITIS DIM. (Greengrocer)", "tags": {"shop": "greengrocer"}, "phone": "+30 273 504 1860", "match": ["πολιτης δημ", "politis dim"]},
+ {"village": "vlach", "name": "ETE - ETHNIKI TRAPEZA ELLADOS", "tags": {"amenity": "bank"}, "phone": "+30 273 502 7011", "match": ["εθνικη", "ethniki"], "addr": "E.O. Spartis - Monemvasias"},
+ {"village": "vlach", "name": "MANTIS IOANNIS & PARASKEVAS OE (Pizza)", "tags": {"amenity": "fast_food"}, "phone": "+30 273 504 2540", "match": ["μαντης", "mantis"], "addr": "VLACHIOTI"},
+ {"village": "vlach", "name": "POLITIS PANAG D (Pizza)", "tags": {"amenity": "fast_food"}, "phone": "+30 273 504 1567", "match": ["πολιτης παναγ", "politis panag"]}
 ];
 let moved=LS.get("moved",{}), dirShops=[];
 const norm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ς/g,"σ");
-function offsetPos(c,i){const a=i*2.4,r=60+((i*37)%50),k=Math.cos(c[0]*Math.PI/180);return[c[0]+r*Math.cos(a)/111000,c[1]+r*Math.sin(a)/(111000*k)]}
+function offsetPos(c,i){const a=i*2.4,r=50+45*Math.sqrt(i),k=Math.cos(c[0]*Math.PI/180);return[c[0]+r*Math.cos(a)/111000,c[1]+r*Math.sin(a)/(111000*k)]}
 function buildDirShops(){
-  dirShops=[];const used=new Set();
+  dirShops=[];const used=new Set(),cnt={};
   DIRECTORY.forEach((d,i)=>{
     const c=centers[d.village]||VILLAGES[d.village].fb;
-    const pos=d.lat?[d.lat,d.lon]:offsetPos(c,i);
+    const kk=cnt[d.village]=(cnt[d.village]||0)+1;const pos=d.lat?[d.lat,d.lon]:offsetPos(c,kk);
     const keys=(d.match||[]).map(norm);
-    const hit=osmShops.find(o=>!used.has(o.id)&&keys.some(k=>norm(o.tags.name).includes(k))&&dist([o.lat,o.lon],pos)<2000);
+    const hit=osmShops.find(o=>!used.has(o.id)&&keys.some(k=>norm(o.tags.name).includes(k))&&dist([o.lat,o.lon],pos)<1500);
     if(hit){used.add(hit.id);if(!hit.tags.phone)hit.tags.phone=d.phone;return}   // already on the map: just add the phone number
     dirShops.push({id:"d"+i,dir:true,approx:!d.lat,v:d.village,lat:pos[0],lon:pos[1],tags:Object.assign({name:d.name,phone:d.phone,"addr:street":d.addr||""},d.tags)});
   });
@@ -197,7 +275,7 @@ async function geocode(v){
   return v.fb;
 }
 async function loadVillage(key){
-  const ck="osm3_"+key,cached=LS.get(ck,null);
+  const ck="osm5_"+key,cached=LS.get(ck,null);
   if(cached&&Date.now()-cached.t<3*864e5){centers[key]=cached.c;return cached.items}
   const c=await geocode(VILLAGES[key]);centers[key]=c;
   const a=`(around:${RADIUS},${c[0]},${c[1]})`;
