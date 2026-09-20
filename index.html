@@ -95,7 +95,7 @@ const ICONS={bakery:"🥖",butcher:"🥩",supermarket:"🛒",convenience:"🏪",
   kiosk:"📰",hotel:"🏨",guest_house:"🏡",apartment:"🏡",hostel:"🛏️",camp_site:"⛺",museum:"🏛️",marketplace:"🧺",mobile_phone:"📱",
   electronics:"🔌",jewelry:"💍",books:"📚",gift:"🎁",fishmonger:"🐟",deli:"🧀",alcohol:"🍷",beverages:"🥤",tobacco:"🚬",farm:"🌱"};
 const FOOD_AM=["restaurant","cafe","bar","pub","fast_food","ice_cream","nightclub"];
-const SERV_AM=["pharmacy","bank","atm","fuel","post_office","clinic","doctors","dentist","veterinary","car_wash","car_rental","bicycle_rental"];
+const SERV_AM=["pharmacy","bank","atm","fuel","post_office","clinic","doctors","dentist","veterinary","car_wash","car_rental","bicycle_rental","hairdresser"];
 
 const TXT={
  en:{title:"📍 Laconia Shops",all:"All",gps:"📡 My location",add:"➕ Add shop",list:"📋 Nearby",wallet:"💶 Wallet",search:"Search a shop…",
@@ -248,7 +248,13 @@ const DIRECTORY=[
  {"village": "vlach", "name": "POLITIS DIM. (Greengrocer)", "tags": {"shop": "greengrocer"}, "phone": "+30 273 504 1860", "match": ["πολιτης δημ", "politis dim"]},
  {"village": "vlach", "name": "ETE - ETHNIKI TRAPEZA ELLADOS", "tags": {"amenity": "bank"}, "phone": "+30 273 502 7011", "match": ["εθνικη", "ethniki"], "addr": "E.O. Spartis - Monemvasias"},
  {"village": "vlach", "name": "MANTIS IOANNIS & PARASKEVAS OE (Pizza)", "tags": {"amenity": "fast_food"}, "phone": "+30 273 504 2540", "match": ["μαντης", "mantis"], "addr": "VLACHIOTI"},
- {"village": "vlach", "name": "POLITIS PANAG D (Pizza)", "tags": {"amenity": "fast_food"}, "phone": "+30 273 504 1567", "match": ["πολιτης παναγ", "politis panag"]}
+ {"village": "vlach", "name": "POLITIS PANAG D (Pizza)", "tags": {"amenity": "fast_food"}, "phone": "+30 273 504 1567", "match": ["πολιτης παναγ", "politis panag"]},
+
+ {"village": "vlach", "name": "HAIR SALON BY KOUTSOUMPOU GEORGIA", "tags": {"amenity": "hairdresser"}, "phone": "+30 273 540 0266 / +30 694 996 1848", "match": ["koutsoumpou georgia", "κουτσουμπου γεωργια"]},
+ {"village": "vlach", "name": "SALON NOUVEAU", "tags": {"amenity": "hairdresser"}, "phone": "+30 273 504 2127", "match": ["nouveau"]},
+ {"village": "vlach", "name": "ΚΟΥΤΣΟΥΜΠΟΣ ΙΩΑΝΝΗΣ (Κομμωτήριο)", "tags": {"amenity": "hairdresser"}, "phone": "+30 273 504 1739", "match": ["κουτσουμπος ιωαννης"]},
+ {"village": "vlach", "name": "ΚΟΜΜΩΤΗΡΙΟ ΙΩΑΝΝΗΣ", "tags": {"amenity": "hairdresser"}, "phone": "+30 273 504 1037 / +30 697 285 8247", "match": ["κομμωτηριο ιωαννης"]},
+ {"village": "vlach", "name": "ΜΑΝΙΑΤΗ ΠΑΝΑΓΙΩΤΑ (Ανθοπωλείο)", "tags": {"shop": "florist"}, "phone": "+30 698 781 3449", "match": ["μανιατη", "maniati"]}
 ];
 let moved=LS.get("moved",{}), dirShops=[];
 const norm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ς/g,"σ");
